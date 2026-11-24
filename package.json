@@ -1,0 +1,1 @@
+{"devDependencies":{"@tauri-apps/cli":"^2"},"name":"minab-windows","private":true,"scripts":{"tauri":"tauri"},"type":"module","version":"0.1.0"}
