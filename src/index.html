@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minab OpenVPN</title>
+  <!-- Vazirmatn via Google Fonts; system-font fallback keeps the app usable offline -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- ===== Header ===== -->
+    <header class="app-header">
+      <div class="brand">
+        <!-- Minimal backpack / leaf mark (inline SVG, no external image) -->
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="30" height="30" fill="none">
+            <!-- backpack body -->
+            <path
+              d="M10 12a6 6 0 0 1 12 0v3H10v-3Z"
+              fill="#0E9F6E"
+            />
+            <rect x="8" y="14" width="16" height="12" rx="5" fill="#0E9F6E" />
+            <!-- front pocket -->
+            <rect x="12.5" y="18" width="7" height="6" rx="2.5" fill="#ffffff" opacity="0.92" />
+            <!-- straps -->
+            <path d="M12 12V9.5M20 12V9.5" stroke="#0B7A55" stroke-width="1.8" stroke-linecap="round" />
+            <!-- leaf -->
+            <path
+              d="M21.5 6.5c2.4.4 3.8 1.9 4 4.2-2.4-.3-3.9-1.8-4-4.2Z"
+              fill="#34D399"
+            />
+          </svg>
+        </span>
+        <div class="brand-text">
+          <h1>Minab OpenVPN</h1>
+          <p class="brand-sub">For the children of Minab</p>
+        </div>
+      </div>
+      <span id="header-state" class="state-pill state-disconnected">Disconnected</span>
+    </header>
+
+    <!-- ===== Status line ===== -->
+    <section class="status-card card" aria-live="polite">
+      <div class="status-row">
+        <span id="status-dot" class="status-dot dot-disconnected" aria-hidden="true"></span>
+        <div class="status-text">
+          <strong id="status-label">Disconnected</strong>
+          <span id="status-detail">No server connected</span>
+        </div>
+        <button id="connect-btn" class="connect-btn" type="button" aria-label="Connect">
+          <span class="connect-halo" aria-hidden="true"></span>
+          <span class="connect-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
+              <path
+                d="M12 3v10"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round"
+              />
+              <path
+                d="M6.5 6.5a8 8 0 1 0 11 0"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+          <span id="connect-label" class="connect-label">Connect</span>
+        </button>
+      </div>
+      <div class="status-bytes">
+        <span>↓ <span id="bytes-in">0 B</span></span>
+        <span>↑ <span id="bytes-out">0 B</span></span>
+        <span id="status-server" class="status-server"></span>
+      </div>
+    </section>
+
+    <!-- ===== Main content (one section per tab) ===== -->
+    <main id="content">
+      <!-- ===== Home ===== -->
+      <section id="tab-home" class="tab-panel active" aria-label="Home">
+        <div class="toolbar">
+          <h2>Servers</h2>
+          <button id="ping-all-btn" class="btn btn-ghost" type="button">Test all</button>
+        </div>
+
+        <div id="home-list" class="server-list">
+          <p class="empty-note" id="home-empty">
+            No servers yet. Go to <strong>Import</strong> and add some .ovpn configs.
+          </p>
+        </div>
+
+        <!-- Real-test settings (inline steppers, + / − always visible — Android 0.9.6.5 fix) -->
+        <details class="settings-panel card" id="realtest-settings">
+          <summary class="settings-summary">
+            <span>Real test settings</span>
+            <span class="settings-gear" aria-hidden="true">⚙</span>
+          </summary>
+          <div class="settings-body">
+            <div class="stepper-row">
+              <label for="wait-value">Wait per server</label>
+              <div class="stepper" role="group" aria-label="Wait per server">
+                <button type="button" class="stepper-btn" data-stepper="wait" data-dir="-1" aria-label="Decrease wait per server">−</button>
+                <span class="stepper-value"><span id="wait-value">12</span> s</span>
+                <button type="button" class="stepper-btn" data-stepper="wait" data-dir="1" aria-label="Increase wait per server">+</button>
+              </div>
+            </div>
+            <div class="stepper-row">
+              <label for="healthy-value">Healthy servers</label>
+              <div class="stepper" role="group" aria-label="Healthy servers">
+                <button type="button" class="stepper-btn" data-stepper="healthy" data-dir="-1" aria-label="Decrease healthy servers">−</button>
+                <span class="stepper-value"><span id="healthy-value">5</span></span>
+                <button type="button" class="stepper-btn" data-stepper="healthy" data-dir="1" aria-label="Increase healthy servers">+</button>
+              </div>
+            </div>
+            <label class="toggle-row">
+              <input type="checkbox" id="test-without-ping" />
+              <span>Test servers without ping</span>
+            </label>
+            <p class="settings-hint">
+              Real test tries a real connection on each server, until the chosen
+              number of healthy servers is found.
+            </p>
+            <button id="real-test-btn" class="btn btn-primary btn-block" type="button">
+              Start real test
+            </button>
+          </div>
+        </details>
+      </section>
+
+      <!-- ===== Configs ===== -->
+      <section id="tab-configs" class="tab-panel" aria-label="Configs" hidden>
+        <div class="toolbar">
+          <h2>Configs</h2>
+          <button id="ping-all-btn-2" class="btn btn-ghost" type="button">Test all</button>
+        </div>
+        <div id="group-chips" class="chip-row" role="group" aria-label="Filter by group">
+          <button type="button" class="chip chip-active" data-group="__all__">All</button>
+        </div>
+        <div id="configs-list" class="server-list">
+          <p class="empty-note">No configs yet.</p>
+        </div>
+      </section>
+
+      <!-- ===== Graph ===== -->
+      <section id="tab-graph" class="tab-panel" aria-label="Graph" hidden>
+        <div class="toolbar">
+          <h2>Data used</h2>
+          <div class="period-switch" role="group" aria-label="Period">
+            <button type="button" class="period-btn period-active" data-period="today">Today</button>
+            <button type="button" class="period-btn" data-period="week">Week</button>
+            <button type="button" class="period-btn" data-period="month">Month</button>
+          </div>
+        </div>
+        <div class="card graph-card">
+          <div class="graph-total">
+            <span id="graph-total-value" class="graph-total-value">0 B</span>
+            <span id="graph-total-label" class="graph-total-label">Today</span>
+          </div>
+          <div id="graph-bars" class="graph-bars" aria-label="Data usage chart"></div>
+          <div id="graph-bar-labels" class="graph-bar-labels"></div>
+        </div>
+        <p class="graph-footer">
+          <span id="graph-footer-text">Total 0 B · Today</span>
+          <button id="graph-now-btn" class="btn btn-ghost btn-small" type="button">Now</button>
+        </p>
+      </section>
+
+      <!-- ===== Import ===== -->
+      <section id="tab-import" class="tab-panel" aria-label="Import" hidden>
+        <div class="toolbar">
+          <h2>Import configs</h2>
+        </div>
+        <div class="card import-card">
+          <label class="file-drop" for="ovpn-files">
+            <span class="file-drop-icon" aria-hidden="true">＋</span>
+            <span class="file-drop-text">Choose .ovpn files</span>
+            <span class="file-drop-hint">You can pick many files at once</span>
+            <span id="file-count" class="file-count" hidden></span>
+          </label>
+          <input id="ovpn-files" type="file" accept=".ovpn" multiple hidden />
+
+          <label class="field-label" for="import-group">Group</label>
+          <input id="import-group" class="field" type="text" list="group-options" placeholder="Pick a group or type a new one" />
+          <datalist id="group-options"></datalist>
+
+          <label class="field-label" for="import-username">Username</label>
+          <input id="import-username" class="field" type="text" autocomplete="username" placeholder="Username for all configs" />
+
+          <label class="field-label" for="import-password">Password</label>
+          <input id="import-password" class="field" type="password" autocomplete="current-password" placeholder="Password for all configs" />
+
+          <button id="import-btn" class="btn btn-primary btn-block" type="button">Import</button>
+          <p id="import-result" class="import-result" aria-live="polite"></p>
+        </div>
+      </section>
+    </main>
+
+    <!-- ===== Tab bar ===== -->
+    <nav class="tab-bar" aria-label="Main tabs">
+      <button type="button" class="tab-btn tab-active" data-tab="home">
+        <span class="tab-icon" aria-hidden="true">⌂</span><span>Home</span>
+      </button>
+      <button type="button" class="tab-btn" data-tab="configs">
+        <span class="tab-icon" aria-hidden="true">☰</span><span>Configs</span>
+      </button>
+      <button type="button" class="tab-btn" data-tab="graph">
+        <span class="tab-icon" aria-hidden="true">▮▮▮</span><span>Graph</span>
+      </button>
+      <button type="button" class="tab-btn" data-tab="import">
+        <span class="tab-icon" aria-hidden="true">＋</span><span>Import</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Credentials dialog (shown after picking files if username/password are empty) -->
+  <dialog id="cred-dialog" class="cred-dialog">
+    <form method="dialog" class="cred-form">
+      <h3>Server credentials</h3>
+      <p>These files need a username and password. They will be used for all imported configs.</p>
+      <label class="field-label" for="dialog-username">Username</label>
+      <input id="dialog-username" class="field" type="text" autocomplete="username" />
+      <label class="field-label" for="dialog-password">Password</label>
+      <input id="dialog-password" class="field" type="password" autocomplete="current-password" />
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-ghost" id="cred-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="cred-confirm">Import</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
