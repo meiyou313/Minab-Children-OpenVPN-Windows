@@ -56,6 +56,9 @@ pub fn run() {
             let handle = app.handle().clone();
             // Last cumulative (in + out) total seen, for per-session deltas.
             let last_total = Arc::new(Mutex::new(0u64));
+            // The sink closure moves its handle in, so give it a clone
+            // and keep `handle` for the setup code below (else E0382).
+            let sink_handle = handle.clone();
             let sink: EventSink = Arc::new(move |event| {
                 match event {
                     VpnEvent::StateChanged { state, message } => {
@@ -67,7 +70,7 @@ pub fn run() {
                         }
                         // Stamp last_connected_at once the tunnel is up.
                         if state == VpnState::Connected {
-                            let profile_id = handle
+                            let profile_id = sink_handle
                                 .state::<AppState>()
                                 .vpn
                                 .lock()
@@ -76,20 +79,20 @@ pub fn run() {
                                 .flatten();
                             if let Some(id) = profile_id {
                                 if let Ok(mut profiles) =
-                                    handle.state::<AppState>().profiles.lock()
+                                    sink_handle.state::<AppState>().profiles.lock()
                                 {
                                     let _ = profiles.set_last_connected(&id);
                                 }
                             }
                         }
-                        let profile_id = handle
+                        let profile_id = sink_handle
                             .state::<AppState>()
                             .vpn
                             .lock()
                             .map(|m| m.status_snapshot().1)
                             .ok()
                             .flatten();
-                        let _ = handle.emit(
+                        let _ = sink_handle.emit(
                             "vpn-state",
                             VpnStatePayload {
                                 state: state.as_str().to_string(),
@@ -116,12 +119,12 @@ pub fn run() {
                         }
                         if delta > 0 {
                             if let Ok(mut usage) =
-                                handle.state::<AppState>().usage.lock()
+                                sink_handle.state::<AppState>().usage.lock()
                             {
                                 usage.add_bytes(delta);
                             }
                         }
-                        let _ = handle.emit(
+                        let _ = sink_handle.emit(
                             "bytecount",
                             BytecountPayload {
                                 bytes_in,
