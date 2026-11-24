@@ -19,6 +19,10 @@
   "bundle": {
     "active": true,
     "category": "Utility",
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ],
     "targets": [
       "msi",
       "nsis"
