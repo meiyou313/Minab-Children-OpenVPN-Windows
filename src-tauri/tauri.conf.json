@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "height": 760,
+        "label": "main",
+        "minHeight": 640,
+        "minWidth": 360,
+        "resizable": true,
+        "title": "Minab OpenVPN",
+        "width": 420
+      }
+    ]
+  },
+  "build": {
+    "frontendDist": "../src"
+  },
+  "bundle": {
+    "active": true,
+    "category": "Utility",
+    "targets": [
+      "msi",
+      "nsis"
+    ]
+  },
+  "identifier": "com.minab.children.windows",
+  "productName": "Minab OpenVPN",
+  "version": "0.1.0"
+}
